@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-facade-devetel-configs-deployment
+  namespace: ms-cs-upgrade-devetel
+  labels:
+    app: ms-facade-devetel-configs
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ms-facade-devetel-configs
+  template:
+    metadata:
+      labels:
+        app: ms-facade-devetel-configs
+    spec:
+      containers:
+      - name: ms-facade-devetel-configs-container
+        image: 250412402401.dkr.ecr.us-east-1.amazonaws.com
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "0.2"
+          limits:
+            memory: "512Mi"
+            cpu: "0.5"

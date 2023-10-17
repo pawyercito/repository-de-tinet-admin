@@ -1,0 +1,168 @@
+definitions:
+  steps:
+    - step: &mergeStage
+        name: "Pipeine Generico Deploy - K8s Deploy"
+        oidc: true
+        image:
+          name: 250412402401.dkr.ecr.us-east-1.amazonaws.com/consorcio-python-node-sls-git-ssh-ubuntu
+          aws:
+            oidc-role: arn:aws:iam::250412402401:role/BitBucketOpenIDConnect
+        runs-on:
+          - 'aws'
+          - 'self.hosted'
+          - 'linux'
+        services:
+          - docker
+        artifacts:
+        script:
+          # Show role is base ec2 runner
+          - echo $(aws sts get-caller-identity)
+
+          # Assume intermediate role
+          - export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" $(aws sts assume-role --role-arn $STS_ROLE --role-session-name STSBASE --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" --output text))
+          - echo $(aws sts get-caller-identity)
+
+          # Assume security role to retrieve secrets
+          - export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" $(aws sts assume-role --role-arn $SECURITY_ROLE --role-session-name SECURITYACCOUNT --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" --output text))
+          - echo $(aws sts get-caller-identity)
+
+          # Fetch SSH key from SM
+          - aws secretsmanager get-secret-value --region ${REGION} --secret-id ${SSH_SECRET} --query SecretBinary --output text | base64 --decode > ~/.ssh/id_rsa
+          - chmod 400 ~/.ssh/id_rsa
+          - eval $(ssh-agent -s)
+          - ssh-add ~/.ssh/id_rsa
+
+          # Clone cicd repo at branch master
+          - git clone ${CICD_REPO_URL} -b ${CICD_REPO_BRANCH} || echo "Error clonning repository ${CICD_REPO_BRANCH} " | exit 1
+
+          # Mark it as safe
+          - git config --global --add safe.directory /opt/atlassian/pipelines/agent/build
+          - cp -r ${CICD_REPO_NAME} devops/src/ || echo "Error copying master_invoker file" | exit 1
+          - rm -rf ${CICD_REPO_NAME} || echo "Error removing cloned repo" | exit 1
+          - ls -ll
+          - ls -ll devops/src
+          - ls -ll devops/src/merge
+
+          - SECRET="${TECHNOLOGY}/${FACTORY}/${BITBUCKET_BRANCH}"; echo ${SECRET}
+          - CICD_DEVOPS_PATH=$(pwd)
+          # Move back to base ec2 role
+          - unset AWS_ACCESS_KEY_ID
+          - unset AWS_SECRET_ACCESS_KEY
+          - unset AWS_SESSION_TOKEN
+
+          # Execute master invoker
+          - python3 devops/src/merge/merge_handler.py ${TECHNOLOGY} ${LANGUAGE} devops/blacklist.json ${REGION} ${STS_ROLE} ${SECURITY_ROLE} ${SECRET} microservices/generic ${BITBUCKET_REPO_SLUG} ${BITBUCKET_BRANCH} ${CICD_DEVOPS_PATH} ${BITBUCKET_BRANCH} ${BITBUCKET_COMMIT}
+
+    - step: &uniquePrStage
+        name: "Unique pr stage"
+        oidc: true
+        image:
+          name: 250412402401.dkr.ecr.us-east-1.amazonaws.com/consorcio-python-node-sls-git-ssh-ubuntu
+          aws:
+            oidc-role: arn:aws:iam::250412402401:role/BitBucketOpenIDConnect
+        runs-on:
+          - 'aws'
+          - 'self.hosted'
+          - 'linux'
+        artifacts:
+          - log.txt
+        script:
+          
+          #bitbucket branch
+          - echo $BITBUCKET_BRANCH
+
+          #bitbucket pr destination branch
+          - echo $BITBUCKET_PR_DESTINATION_BRANCH
+          
+          - export SECRETS_BRANCH='develop'
+
+          # Show role
+          - echo $(aws sts get-caller-identity)
+
+          # Assume intermediate role
+          - export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" $(aws sts assume-role --role-arn $STS_ROLE --role-session-name STSBASE --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" --output text))
+          - echo $(aws sts get-caller-identity)
+
+          # Assume security role to retrieve secrets
+          - export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" $(aws sts assume-role --role-arn $SECURITY_ROLE --role-session-name SECURITYACCOUNT --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" --output text))
+          - echo $(aws sts get-caller-identity)
+
+          # Fetch SSH key from SM        
+          - aws secretsmanager get-secret-value --region ${REGION} --secret-id shared/cicdbinarybbkey  --query SecretBinary --output text | base64 --decode > ~/.ssh/private_key
+          - chmod 400 ~/.ssh/private_key
+          - eval $(ssh-agent -s)
+          - ssh-add ~/.ssh/private_key
+          
+          # Clone cicd repo
+          - git clone ${CICD_REPO_URL} -b ${CICD_REPO_BRANCH} || echo "Error clonning repository ${CICD_REPO_BRANCH} " | exit 1
+          # Mark it as safe
+          - git config --global --add safe.directory /opt/atlassian/pipelines/agent/build
+          - cp -r ${CICD_REPO_NAME}/pull-request/ devops/pull-request/ || echo "Error copying pr_handler file" | exit 1
+          - cp -r ${CICD_REPO_NAME}/modules/ devops/modules/ || echo "Error copying aws folder" | exit 1
+          - rm -rf ${CICD_REPO_NAME} || echo "Error removing cloned repo" | exit 1
+
+
+          - mkdir ${LANGUAGE}
+          - touch ${LANGUAGE}/example.txt
+          - OUTPUT_DIR=${LANGUAGE}
+          - SHARED_SECRET="${TECHNOLOGY}/${FACTORY}/${SECRETS_BRANCH}"; echo ${SHARED_SECRET}
+          - SPECIFIC_SECRET="${BITBUCKET_REPO_SLUG}/${SECRETS_BRANCH}"; echo ${SPECIFIC_SECRET}
+
+          - ls -lh devops/
+
+          # Move back to base ec2 |role
+          - unset AWS_ACCESS_KEY_ID
+          - unset AWS_SECRET_ACCESS_KEY
+          - unset AWS_SESSION_TOKEN
+
+          # Execute master invoker
+          - python3 devops/pull-request/pr_handler.py ${OUTPUT_DIR} devops/pull-request/${LANGUAGE}/ devops/blacklist.json ${REGION} ${STS_ROLE} ${SECURITY_ROLE} ${BITBUCKET_PR_ID} ${BITBUCKET_REPO_SLUG} ${BITBUCKET_PR_DESTINATION_BRANCH} ${BITBUCKET_BRANCH}
+
+          # List & show new files
+          - ls -l
+
+          # List & show new files
+          - ls -lh ${OUTPUT_DIR}/
+          - cat ${OUTPUT_DIR}/*
+
+
+pipelines:
+  branches:
+    develop*:
+      - step:
+          <<: *mergeStage
+    release:
+      - step:
+          <<: *mergeStage
+    release/**:
+      - step:
+          <<: *mergeStage
+    master:
+      - step:
+          <<: *mergeStage
+
+  pull-requests:
+    develop:
+      - step:
+          <<: *uniquePrStage
+    release:
+      - step:
+          <<: *uniquePrStage
+    release/**:
+      - step:
+          <<: *uniquePrStage
+    master:
+      - step:
+          <<: *uniquePrStage
+
+    feature/**:
+      - step:
+          <<: *uniquePrStage
+
+    bugfix/**:
+      - step:
+          <<: *uniquePrStage
+
+    hotfix/**:
+      - step:
+          <<: *uniquePrStage

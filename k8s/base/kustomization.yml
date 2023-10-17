@@ -1,0 +1,17 @@
+# used kustomize create --namespace default --resources=service.yml,deployment.yml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Manifests that kustomize must track to be able to perform operations on them
+# If not listed below, they do not exist in the eyes of kustomize
+resources:
+  # You could also use a github repo link here, has to be public I guess
+
+  - 01-eks-serviceaccounteks.yml
+  - 02-virtual-service.yml
+  - 03-configmaps.yml
+  - 04-secrets.yml
+  - 05-service.yml
+  - 06-deployment.yml
+  - 07-requestauthentication.yml
+  - 08-authorizationpolicy.yml

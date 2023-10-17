@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: ms-facade-devetel-configs-vs
+  namespace: ms-cs-upgrade-devetel
+spec:
+  gateways:
+  - istio-system/gateway-global
+  hosts:
+  - cloud-services-develop.cnsv.cl
+  http:
+  - route:
+    - destination:
+        host: ms-facade-devetel-configs-svc.ms-cs-upgrade-devetel.svc.cluster.local
+        port:
+          number: 80

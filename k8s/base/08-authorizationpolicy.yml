@@ -1,0 +1,14 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: ms-facade-devetel-configs-auth-policy
+  namespace: ms-cs-upgrade-devetel
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["*"]
+  selector:
+    matchLabels:
+      app: ms-facade-devetel-configs

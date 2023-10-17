@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - ../../base
+
+# Patch ECR image to pull from
+images:
+  - name: 250412402401.dkr.ecr.us-east-1.amazonaws.com
+    newName: 250412402401.dkr.ecr.us-east-1.amazonaws.com/ms-facade-devetel-configs-develop
+    newTag: ${NEW_TAG}

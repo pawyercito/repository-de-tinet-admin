@@ -1,0 +1,3 @@
+fastapi==0.88.0
+pyctuator==1.0.1
+uvicorn[standard]==0.20.0

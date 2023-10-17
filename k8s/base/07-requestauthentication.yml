@@ -1,0 +1,22 @@
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: ms-facade-devetel-configs-ra
+  namespace: ms-cs-upgrade-devetel
+spec:
+  jwtRules:
+    - issuer: https://ssoqa.consorcio.cl/auth/realms/CRM
+      jwksUri: https://ssoqa.consorcio.cl/auth/realms/CRM/protocol/openid-connect/certs
+      forwardOriginalToken: true
+    - issuer: https://ssoqa.consorcio.cl/auth/realms/SsoConsorcioServicios
+      jwksUri: https://ssoqa.consorcio.cl/auth/realms/SsoConsorcioServicios/protocol/openid-connect/certs
+      forwardOriginalToken: true
+    - issuer: https://ssoqa.cnsv.cl/auth/realms/CRM
+      jwksUri: https://ssoqa.cnsv.cl/auth/realms/CRM/protocol/openid-connect/certs
+      forwardOriginalToken: true
+    - issuer: https://ssoqa.cnsv.cl/auth/realms/SsoConsorcioServicios
+      jwksUri: https://ssoqa.cnsv.cl/auth/realms/SsoConsorcioServicios/protocol/openid-connect/certs
+      forwardOriginalToken: true
+  selector:
+    matchLabels:
+      app: ms-facade-devetel-configs
