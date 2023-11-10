@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+
+from fastapi import HTTPException
+from sqlalchemy.exc import SQLAlchemyError
+
 from app.controllers.channels.busqueda_canal_controller import BusquedaCanalController
 from app.repository.canales_repository import CanalesRepository
 from app.use_case.canales.busqueda_canal_use_case import BusquedaCanalUseCase
@@ -150,7 +154,7 @@ async def agrega_canal(canal_to: dict):
 
 # define delete route for channel
 @app.delete("/eliminarCanal")
-async def eliminar_canal(id: int):
+async def eliminar_canal(canal_to: dict):
     try:
         # initialize repository
         canales_repository = CanalesRepository()
@@ -162,13 +166,18 @@ async def eliminar_canal(id: int):
         eliminar_canal_controller = EliminarCanalController(eliminar_canal_use_case)
         
         # call controller method to delete channel
-        response = eliminar_canal_controller.eliminar_canal(id)
+        response = eliminar_canal_controller.eliminar_canal(canal_to)
         
-        # return successful response
         return JSONResponse(content=response, status_code=200)
+    except SQLAlchemyError as e:
+        # If a SQLAlchemy error occurs, return JSON response with specific error details
+        return JSONResponse(content={"error": f"Error de SQLAlchemy: {e}"}, status_code=500)
+    except HTTPException as e:
+        # If a HTTPException error occurs, return JSON response with specific error details
+        return JSONResponse(content={"error": e.detail}, status_code=e.status_code)
     except Exception as e:
-        # return error response
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        # If an unknown error occurs, return JSON response with generic error details
+        return JSONResponse(content={"error": str(e) or "Ocurrió un error desconocido"}, status_code=500)
     
 
 @app.get("/listarParametros")

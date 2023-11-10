@@ -9,6 +9,6 @@ class Canales(BaseModel):
     descripcion: str
     tipoProducto: int
     tipoOrigen: int
-    producto: int
+    producto: str
     idConvenio: str
     tipoSeguro: int

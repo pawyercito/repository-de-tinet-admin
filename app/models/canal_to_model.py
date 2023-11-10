@@ -4,11 +4,11 @@ from datetime import datetime
 from pydantic import BaseModel
 
 class CanalTO(BaseModel):
+    idCanal: int
     producto: int
     idConvenio: str
     tipoOrigen: int
     tipoSeguro: int
-    idCanal: int
     passwordCanal: str
     idEmpresa: int
     descripcion: str

@@ -7,13 +7,13 @@ Base = declarative_base()
 class Canales(Base):
     __tablename__ = "CANALES"
 
-    idCanal = Column(Integer, primary_key=True, index=True, name="ID_CANAL")
+    idCanal = Column(Integer, index=True, name="ID_CANAL")
     passwordCanal = Column(String, name="PASSWORDCANAL")
     idEmpresa = Column(Integer, name="ID_EMPRESA")
     descripcion = Column(String, name="DESCRIPCION")
     tipoProducto = Column(Integer, name="TIPO_PRODUCTO")
     tipoOrigen = Column(Integer,primary_key=True, index=True, name = "TIPO_ORIGEN")
-    producto = Column(Integer, name = "PRODUCTO" )
+    producto = Column(Integer, primary_key=True, name = "PRODUCTO" )
     idConvenio = Column(String,primary_key=True, index=True,  name = "ID_CONVENIO")
     tipoSeguro = Column(Integer, primary_key=True, index=True, name = "TIPO_SEGURO")
 

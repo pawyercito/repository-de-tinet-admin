@@ -1,11 +1,15 @@
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.exc import IntegrityError
 from app.models.db.canales_model_db import Canales
 from app.models.canales_model import Canales as CanalesModel    
 from app.repository.base_repository import BaseRepository
 import logging
 import pdb
 from sqlalchemy import and_, or_, null
+from sqlalchemy.exc import SQLAlchemyError
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
 
 
 
@@ -55,27 +59,60 @@ class CanalesRepository(BaseRepository):
             return None
         return [canal.__dict__ for canal in canales]
     
-    def existe_canal(self, producto, id_convenio, tipo_origen, tipo_seguro):
-        canal = self.session.query(Canales).filter_by(producto=producto, id_convenio=id_convenio, tipo_origen=tipo_origen, tipo_seguro=tipo_seguro).first()
-        if canal is None:
-            return False
-        return True
-    
-    def guardar_canal(self, canal):
-        self.session.add(canal)
-        self.session.commit()
-        return canal.__dict__
-    
-    def eliminar_canal(self, canal: CanalesModel):
-        canal_db = self.db.query(Canales).filter_by(
-            producto=canal.producto,
-            id_convenio=canal.id_convenio,
-            tipo_origen=canal.tipo_origen,
-            tipo_seguro=canal.tipo_seguro
+    def existe_canal(self, idCanal, descripcion, producto, idConvenio, tipoOrigen, tipoSeguro, tipoProducto, idEmpresa, passwordCanal):
+        # Realiza una consulta para verificar si el canal ya existe en la base de datos
+        existing_canal = self.session.query(Canales).filter_by(
+            idCanal=idCanal,
+            descripcion=descripcion,
+            producto=producto,
+            idConvenio=idConvenio,
+            tipoOrigen=tipoOrigen,
+            tipoSeguro=tipoSeguro,
+            tipoProducto=tipoProducto,
+            idEmpresa=idEmpresa,
+            passwordCanal=passwordCanal
         ).first()
-        if canal_db is None:
-            return "El registro no existe"
-        self.db.delete(canal_db)
-        self.db.commit()
-        return "Se eliminó correctamente"
+
+        return existing_canal is not None
+
+    def guardar_canal(self, canal_data: dict):
+        # Verifica si el canal ya existe
+        if self.existe_canal(**canal_data):
+            raise Exception("El canal ya existe y no se puede agregar nuevamente.")
+        
+        # Si el canal no existe, crea y guarda el nuevo canal
+        new_canal = Canales(**canal_data)
+        try:
+            self.session.add(new_canal)
+            self.session.commit()
+            return "Se agregó correctamente"
+        except SQLAlchemyError as e:
+            self.session.rollback()
+            error = str(e.__dict__['orig'])
+            return f"Error: {error}"
+    
+    def eliminar_canal(self, idCanal, descripcion, producto, idConvenio, tipoOrigen, tipoSeguro, tipoProducto, idEmpresa, passwordCanal):
+    # Verifica si el canal ya existe
+        if not self.existe_canal(idCanal, descripcion, producto, idConvenio, tipoOrigen, tipoSeguro, tipoProducto, idEmpresa, passwordCanal):
+            raise Exception("El canal no existe y no se puede eliminar.")
+        # Si el canal existe, elimina del sistema
+        try:
+            self.session.query(Canales).filter_by(
+                idCanal=idCanal,
+                descripcion=descripcion,
+                producto=producto,
+                idConvenio=idConvenio,
+                tipoOrigen=tipoOrigen,
+                tipoSeguro=tipoSeguro,
+                tipoProducto=tipoProducto,
+                idEmpresa=idEmpresa,
+                passwordCanal=passwordCanal
+            ).delete()
+            self.session.commit()
+            return {"message": "Canal eliminado correctamente"}
+        except SQLAlchemyError as e:
+            self.session.rollback()
+            error = str(e.__dict__['orig'])
+            return {"error": f"Error: {error}"}
+        
         
