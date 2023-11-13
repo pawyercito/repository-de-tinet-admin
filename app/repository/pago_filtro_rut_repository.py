@@ -1,24 +1,23 @@
 # repository.py
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from app.models.db.pago_filtro_rut_model_db import PagoFiltroRut
-from sqlalchemy.orm.session import Session
 from app.repository.base_repository import BaseRepository
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.orm.exc import ObjectDeletedError
+from app.database.database import get_db
+
+
 
 class PagoFiltroRutRepository(BaseRepository):
+    def __init__(self, Session):
+        super().__init__(Session)
 
-    def create(self, pago_filtro_rut):
-        db = self.SessionLocal()
-        db.add(pago_filtro_rut)
-        db.commit()
-        db.refresh(pago_filtro_rut)
-        db.close()
+    def find_first_by_rut_and_fecha_fin_is_null(self, rut_cliente: str):
+        return self.session.query(PagoFiltroRut).filter_by(rut_cliente=rut_cliente, fecha_fin=None).first()
 
-    def find_by_rut(self, rut):
-        db = self.SessionLocal()
-        result = db.query(PagoFiltroRut).filter(PagoFiltroRut.rut_cliente == rut).first()
-        db.close()
-        return result
+    def save(self, pago_filtro_rut: PagoFiltroRut):
+        self.session.add(pago_filtro_rut)
+        self.session.commit()
+        pago_filtro_rut_dict = pago_filtro_rut.to_dict()  # Convertir a diccionario
+        return pago_filtro_rut_dict  # Devolver el diccionario
     
-    def find_all(self):
-        return self.db.query(PagoFiltroRut).all()

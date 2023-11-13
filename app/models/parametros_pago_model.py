@@ -1,11 +1,12 @@
 from typing import List
 from pydantic import BaseModel
 from datetime import datetime
-from app.models.parametros_pago_key_model import ParametrosPagoKey
+from typing import List, Optional
 
 class ParametrosPago(BaseModel):
-    claves: ParametrosPagoKey
+    id_padre: str
+    id: str
     valor: str
-    descripcion: str
+    descripcion: Optional[str] = None
 
     

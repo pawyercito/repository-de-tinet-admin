@@ -27,6 +27,8 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 from app.database.database import get_db
 
+from app.models.pago_filtro_rut_to_model import PagoFiltroRutDTO
+
 from app.controllers.parametros_pago.agrega_parametros_pago_controller import AgregaParametrosPagoController
 from app.use_case.parametros_pago.agrega_parametros_pago_use_case import AgregaParametrosPagoUseCase
 from app.repository.parametros_pago_repository import ParametrosPagoRepository
@@ -181,10 +183,10 @@ async def eliminar_canal(canal_to: dict):
     
 
 @app.get("/listarParametros")
-async def listar_parametros(db: Session = Depends(get_db)):
+async def listar_parametros():
     try:
         # Get parametros_pago repository
-        parametros_pago_repository = ParametrosPagoRepository(db)
+        parametros_pago_repository = ParametrosPagoRepository()
         
         # Create listar_parametros_pago use case
         listar_parametros_pago_use_case = ListarParametrosUseCase(parametros_pago_repository)
@@ -202,10 +204,10 @@ async def listar_parametros(db: Session = Depends(get_db)):
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.post("/agregaParametrosPago")
-async def agrega_parametros_pago(parametros_pago_to: ParametrosPagoTO, db: Session = Depends(get_db)):
+async def agrega_parametros_pago(parametros_pago_to: dict):
     try:
         # Repository pattern
-        parametros_pago_repository = ParametrosPagoRepository(db)
+        parametros_pago_repository = ParametrosPagoRepository()
         
         # Use case pattern
         agrega_parametros_pago_use_case = AgregaParametrosPagoUseCase(parametros_pago_repository)
@@ -223,10 +225,10 @@ async def agrega_parametros_pago(parametros_pago_to: ParametrosPagoTO, db: Sessi
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.delete("/eliminaParametrosPago")
-async def elimina_parametros_pago(parametros_pago_to: ParametrosPagoTO, db: Session = Depends(get_db)):
+async def elimina_parametros_pago(parametros_pago_to: dict):
     """ Delete parameter for payment. """
     try:
-        parametros_pago_repository = ParametrosPagoRepository(db)
+        parametros_pago_repository = ParametrosPagoRepository()
         """ Parameters payment repository. """
         elimina_parametros_pago_use_case = EliminaParametrosPagoUseCase(parametros_pago_repository)
         """ Use case for deleting parameters payment. """
@@ -242,23 +244,22 @@ async def elimina_parametros_pago(parametros_pago_to: ParametrosPagoTO, db: Sess
 
 # Define the pagoFiltroRut route
 @app.post("/pagoFiltroRut")
-async def pago_filtro_rut(pago_filtro_rut: dict):
-    """ Handles POST requests for RUT filtered payments. """
+async def pago_filtro_rut(pago_filtro_rut: PagoFiltroRutDTO, db: Session = Depends(get_db)):
     try:
-        # Initialize repositories, use cases, and controllers
-        pago_filtro_rut_repository = PagoFiltroRutRepository()
+        pago_filtro_rut_repository = PagoFiltroRutRepository(db)
         pago_filtro_rut_use_case = PagoFiltroRutUseCase(pago_filtro_rut_repository)
         pago_filtro_rut_controller = PagoFiltroRutController(pago_filtro_rut_use_case)
 
-        # Call controller method for handling the request
-        response = pago_filtro_rut_controller.pago_filtro_rut(pago_filtro_rut)
+        response = pago_filtro_rut_controller.procesar_pago_filtro_rut(
+            rut_cliente=pago_filtro_rut.rut_cliente, 
+            nombre_cliente=pago_filtro_rut.nombre_cliente, 
+            motivo=pago_filtro_rut.motivo
+        )
 
-        # Return the JSON response with status code 200
         return JSONResponse(content=response, status_code=200)
 
-    except Exception as e:
-        # In case of an error, return a JSON response with status code 500
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+    except HTTPException as e:
+        return JSONResponse(content={"error": e.detail}, status_code=e.status_code)
     
 
 @app.get("/pagoFiltroRut")

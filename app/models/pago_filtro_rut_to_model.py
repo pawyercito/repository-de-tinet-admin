@@ -1,8 +1,10 @@
 from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional
 
-class PagoFiltroRutTO(BaseModel):
-    rutCliente: str
-    nombreCliente: str
+class PagoFiltroRutDTO(BaseModel):
+    rut_cliente: str
+    fecha_inicio: datetime
+    nombre_cliente: str
     motivo: str
-    fechaInicio: str
-    fechaFin: str
+    fecha_fin: Optional[datetime] 

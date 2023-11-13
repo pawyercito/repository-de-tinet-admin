@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class BaseRepository:
-    def __init__(self):
+    def __init__(self, Session):
         driver = os.getenv('EXP_I3_QA_DRIVER')
         host = os.getenv('EXP_I3_QA_HOST')
         port = os.getenv('EXP_I3_QA_PORT')

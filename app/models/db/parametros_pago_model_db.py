@@ -7,7 +7,15 @@ Base = declarative_base()
 class ParametrosPago(Base):
     __tablename__ = 'PARAMETROS_PAGO'
     
-    ID_PADRE = Column(String, primary_key=True, name='ID_PADRE')
+    id_padre = Column(String, primary_key=True, name='ID_PADRE')
     id = Column(String, primary_key=True, name='ID')
     valor = Column(String, name='VALOR')
     descripcion = Column(String, name='DESCRIPCION')
+
+    def to_dict(self):
+        return {
+            'id_padre': self.id_padre,
+            'id': self.id,
+            'valor': self.valor,
+            'descripcion': self.descripcion
+        }
