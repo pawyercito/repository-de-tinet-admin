@@ -1,6 +1,8 @@
 from sqlalchemy import Column, String, Integer, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import composite
+from datetime import datetime
+
 
 Base = declarative_base()
 
@@ -12,6 +14,11 @@ class PagoFiltroRut(Base):
     nombre_cliente = Column(String, name='nombre_cliente')
     motivo = Column(String, name='motivo')
     fecha_fin = Column(DateTime, name='fecha_fin')
+
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat() if isinstance(v, datetime) else v,
+        }
 
     def to_dict(self):
         return {

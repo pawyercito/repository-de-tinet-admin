@@ -8,3 +8,8 @@ class PagoFiltroRutRequest(BaseModel):
     nombre_cliente: str
     motivo: str
     fecha_fin: Optional[datetime] 
+
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat() if isinstance(v, datetime) else v,
+        }

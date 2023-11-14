@@ -261,6 +261,7 @@ async def pago_filtro_rut(request: PagoFiltroRutRequest, db: Session = Depends(g
     return controller.handle(request)
     
 
+
 @app.get("/pagoFiltroRut")
 async def listar_pago_filtro_ruts(db: Session = Depends(get_db)):
     try:
@@ -277,7 +278,7 @@ async def listar_pago_filtro_ruts(db: Session = Depends(get_db)):
         response, status_code = listar_pago_filtro_ruts_controller.handle()
         
         # Return JSON response
-        return JSONResponse(content=response, status_code=status_code)
+        return JSONResponse(content=response, status_code=200)
     except Exception as e:
         # Return JSON error response
         return JSONResponse(content={"error": str(e)}, status_code=500)

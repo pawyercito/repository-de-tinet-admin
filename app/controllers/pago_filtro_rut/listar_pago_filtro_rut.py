@@ -1,4 +1,5 @@
 from app.use_case.pago_filtro_rut.listar_pago_filtro_rut_use_case import ListarPagoFiltroRutsUseCase
+from datetime import datetime
 
 class ListarPagoFiltroRutsController:
     def __init__(self, use_case: ListarPagoFiltroRutsUseCase):
@@ -7,6 +8,12 @@ class ListarPagoFiltroRutsController:
     def handle(self):
         result = self.use_case.execute()
         if result is None:
-            return {"error": "No data found"}, 404
+            return {"error": "No se consiguio ningun pago filtro rut"}, 404
         else:
-            return result, 200
+            return [
+                {
+                    key: value.isoformat() if isinstance(value, datetime) else value
+                    for key, value in item.items()
+                }
+                for item in result
+            ], 200
