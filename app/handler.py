@@ -9,6 +9,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from dateutil.parser import parse
 
+from app.models.canal_to_model import CanalesTO
+
 from app.models.pago_filtro_rut_to_model import PagoFiltroRutRequest
 
 from app.controllers.channels.busqueda_canal_controller import BusquedaCanalController
@@ -37,12 +39,11 @@ from app.database.database import get_db
 from app.controllers.parametros_pago.agrega_parametros_pago_controller import AgregaParametrosPagoController
 from app.use_case.parametros_pago.agrega_parametros_pago_use_case import AgregaParametrosPagoUseCase
 from app.repository.parametros_pago_repository import ParametrosPagoRepository
-from app.models.parametros_pago_to_model import ParametrosPagoTO
+from app.models.parametros_pago_to_model import ParametrosPago
 
 from app.controllers.parametros_pago.eliminar_parametros_pago_controller import EliminaParametrosPagoController
 from app.use_case.parametros_pago.elimina_parametros_pago_use_case import EliminaParametrosPagoUseCase
 from app.repository.parametros_pago_repository import ParametrosPagoRepository
-from app.models.parametros_pago_to_model import ParametrosPagoTO
 
 from app.controllers.pago_filtro_rut.pago_filtro_rut import PagoFiltroRutController
 from app.use_case.pago_filtro_rut.pago_filtro_rut_use_case import PagoFiltroRutUseCase
@@ -73,10 +74,10 @@ app = FastAPI()
 
 # Search channel endpoint
 @app.post("/buscaCanal")
-async def busca_canal(busqueda_canal: dict):
+async def busca_canal(busqueda_canal: CanalesTO, db: Session = Depends(get_db)):
     try:
         # Create channel repository instance
-        canales_repository = CanalesRepository()
+        canales_repository = CanalesRepository(db)
         
         # Create use case instance for searching channels
         busqueda_canal_use_case = BusquedaCanalUseCase(canales_repository)
@@ -96,10 +97,10 @@ async def busca_canal(busqueda_canal: dict):
 
 # Start GET route
 @app.get("/listarCanales")
-async def listar_canales():
+async def listar_canales(db: Session = Depends(get_db)):
     try:
         # Initialize canales repository
-        canales_repository = CanalesRepository()
+        canales_repository = CanalesRepository(db)
         
         # Initialize use case for listing channels
         listar_canales_use_case = ListarCanalesUseCase(canales_repository)
@@ -141,10 +142,10 @@ async def listar_canales_by_id_trx(listar_canales_by_id_trx: dict):
     
 # POST method for adding a new channel
 @app.post("/agregaCanal")
-async def agrega_canal(canal_to: dict):
+async def agrega_canal(canal_to: CanalesTO, db: Session = Depends(get_db)):
     try:
         # Initialize CanalesRepository for handling database operations
-        canales_repository = CanalesRepository()
+        canales_repository = CanalesRepository(db)
         
         # Create AgregaCanalUseCase instance with CanalesRepository dependency
         agrega_canal_use_case = AgregaCanalUseCase(canales_repository)
@@ -161,10 +162,10 @@ async def agrega_canal(canal_to: dict):
 
 # define delete route for channel
 @app.delete("/eliminarCanal")
-async def eliminar_canal(canal_to: dict):
+async def eliminar_canal(canal_to: CanalesTO, db: Session = Depends(get_db)):
     try:
         # initialize repository
-        canales_repository = CanalesRepository()
+        canales_repository = CanalesRepository(db)
         
         # initialize use case with repository
         eliminar_canal_use_case = EliminarCanalUseCase(canales_repository)
@@ -188,10 +189,10 @@ async def eliminar_canal(canal_to: dict):
     
 
 @app.get("/listarParametros")
-async def listar_parametros():
+async def listar_parametros(db: Session = Depends(get_db)):
     try:
         # Get parametros_pago repository
-        parametros_pago_repository = ParametrosPagoRepository()
+        parametros_pago_repository = ParametrosPagoRepository(db)
         
         # Create listar_parametros_pago use case
         listar_parametros_pago_use_case = ListarParametrosUseCase(parametros_pago_repository)
@@ -209,10 +210,10 @@ async def listar_parametros():
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.post("/agregaParametrosPago")
-async def agrega_parametros_pago(parametros_pago_to: dict):
+async def agrega_parametros_pago(parametros_pago_to: ParametrosPago, db: Session = Depends(get_db)):
     try:
         # Repository pattern
-        parametros_pago_repository = ParametrosPagoRepository()
+        parametros_pago_repository = ParametrosPagoRepository(db)
         
         # Use case pattern
         agrega_parametros_pago_use_case = AgregaParametrosPagoUseCase(parametros_pago_repository)
@@ -230,10 +231,10 @@ async def agrega_parametros_pago(parametros_pago_to: dict):
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.delete("/eliminaParametrosPago")
-async def elimina_parametros_pago(parametros_pago_to: dict):
+async def elimina_parametros_pago(parametros_pago_to: ParametrosPago, db: Session = Depends(get_db)):
     """ Delete parameter for payment. """
     try:
-        parametros_pago_repository = ParametrosPagoRepository()
+        parametros_pago_repository = ParametrosPagoRepository(db)
         """ Parameters payment repository. """
         elimina_parametros_pago_use_case = EliminaParametrosPagoUseCase(parametros_pago_repository)
         """ Use case for deleting parameters payment. """
@@ -249,24 +250,15 @@ async def elimina_parametros_pago(parametros_pago_to: dict):
 
 # Define the pagoFiltroRut route
 @app.post("/pagoFiltroRut")
-async def pago_filtro_rut(
-    request: PagoFiltroRutRequest, 
-    db: Session = Depends(get_db)
-):
-    # Create new PagoFiltroRut instance
-    pago_filtro_rut = PagoFiltroRut(
-        rut_cliente=request.rut_cliente,
-        fecha_inicio=request.fecha_inicio,
-        nombre_cliente=request.nombre_cliente,
-        motivo=request.motivo,
-        fecha_fin=request.fecha_fin
-    )
+async def pago_filtro_rut(request: PagoFiltroRutRequest, db: Session = Depends(get_db)):
+    #repository instance
+    repository = PagoFiltroRutRepository(db)
 
-    # Insert the data into the database
-    db.add(pago_filtro_rut)
-    db.commit()
+    use_case = PagoFiltroRutUseCase(repository)
 
-    return {"message": "Operation successful"}
+    controller = PagoFiltroRutController(use_case)
+
+    return controller.handle(request)
     
 
 @app.get("/pagoFiltroRut")

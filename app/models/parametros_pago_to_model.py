@@ -1,7 +1,10 @@
+from typing import List
 from pydantic import BaseModel
+from datetime import datetime
+from typing import List, Optional
 
-class ParametrosPagoTO(BaseModel):
-    idPadre: str
+class ParametrosPago(BaseModel):
+    id_padre: str
     id: str
     valor: str
-    descripcion: str
+    descripcion: Optional[str] = None

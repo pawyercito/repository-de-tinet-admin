@@ -17,6 +17,8 @@ from sqlalchemy.orm import Session
 logging.basicConfig(filename='app.log', level=logging.DEBUG)
 
 class CanalesRepository(BaseRepository):
+    def __init__(self, db):
+        super().__init__(db)
     
     def buscar_canal(self, idCanal=None, producto=None, idConvenio=None, tipoOrigen=None, tipoSeguro=None, tipoProducto=None, idEmpresa=None, passwordCanal=None):
         # Start with a query for all rows
@@ -75,7 +77,7 @@ class CanalesRepository(BaseRepository):
 
         return existing_canal is not None
 
-    def guardar_canal(self, canal_data: dict):
+    def guardar_canal(self, canal_data: Canales):
         # Verifica si el canal ya existe
         if self.existe_canal(**canal_data):
             raise Exception("El canal ya existe y no se puede agregar nuevamente.")

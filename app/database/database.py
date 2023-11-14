@@ -1,13 +1,21 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.repository.base_repository import BaseRepository
 import os
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
+
+from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def get_db():
     driver = os.getenv('EXP_I3_QA_DRIVER')
@@ -21,8 +29,14 @@ def get_db():
     
     engine = create_engine(connection_string)
     Session = sessionmaker(bind=engine)
-    db = Session()
-    try:
-        yield db
-    finally:
-        db.close()
+
+    # Use the context manager to manage the database session
+    with Session() as db:
+        try:
+            yield db
+            db.commit()  # Commit changes after the yield
+        except Exception as e:
+            db.rollback()  # Rollback changes in case of an exception
+            raise e
+        finally:
+            db.close()

@@ -4,6 +4,8 @@ from app.models.parametros_pago_model import ParametrosPago as ParametrosPagoMod
 from app.repository.base_repository import BaseRepository
 import logging
 class ParametrosPagoRepository(BaseRepository):
+    def __init__(self, db):
+        super().__init__(db)
 
     def listar_parametros(self):
         parametros = self.session.query(ParametrosPago).all()

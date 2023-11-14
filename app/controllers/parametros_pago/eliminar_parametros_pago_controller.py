@@ -1,7 +1,7 @@
 # app/controllers/parametros_pago/elimina_parametros_pago_controller.py
 
 from app.use_case.parametros_pago.elimina_parametros_pago_use_case import EliminaParametrosPagoUseCase
-from app.models.parametros_pago_to_model import ParametrosPagoTO
+
 
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException

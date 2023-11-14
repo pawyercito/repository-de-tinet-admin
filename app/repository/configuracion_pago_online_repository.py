@@ -6,6 +6,8 @@ from sqlalchemy.orm.session import Session
 from app.repository.base_repository import BaseRepository
 
 class ConfiguracionPagoOnlineRepository(BaseRepository):
+    def __init__(self, db):
+        super().__init__(db)
 
     def exists(self, id: int):
         return self.db.query(ConfiguracionPagoOnline).filter(ConfiguracionPagoOnline.id == id).first() is not None

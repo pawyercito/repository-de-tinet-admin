@@ -1,15 +1,14 @@
 from typing import List
 from pydantic import BaseModel
 from datetime import datetime
-from pydantic import BaseModel
 
-class CanalTO(BaseModel):
+class CanalesTO(BaseModel):
     idCanal: int
-    producto: int
-    idConvenio: str
-    tipoOrigen: int
-    tipoSeguro: int
     passwordCanal: str
     idEmpresa: int
     descripcion: str
     tipoProducto: int
+    tipoOrigen: int
+    producto: int
+    idConvenio: str
+    tipoSeguro: int
