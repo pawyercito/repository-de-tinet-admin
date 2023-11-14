@@ -1,8 +1,15 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
+import datetime
+from app.models.db.pago_filtro_rut_model_db import PagoFiltroRut
+
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
+
+from dateutil.parser import parse
+
+from app.models.pago_filtro_rut_to_model import PagoFiltroRutRequest
 
 from app.controllers.channels.busqueda_canal_controller import BusquedaCanalController
 from app.repository.canales_repository import CanalesRepository
@@ -26,8 +33,6 @@ from app.repository.parametros_pago_repository import ParametrosPagoRepository
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from app.database.database import get_db
-
-from app.models.pago_filtro_rut_to_model import PagoFiltroRutDTO
 
 from app.controllers.parametros_pago.agrega_parametros_pago_controller import AgregaParametrosPagoController
 from app.use_case.parametros_pago.agrega_parametros_pago_use_case import AgregaParametrosPagoUseCase
@@ -244,22 +249,24 @@ async def elimina_parametros_pago(parametros_pago_to: dict):
 
 # Define the pagoFiltroRut route
 @app.post("/pagoFiltroRut")
-async def pago_filtro_rut(pago_filtro_rut: PagoFiltroRutDTO, db: Session = Depends(get_db)):
-    try:
-        pago_filtro_rut_repository = PagoFiltroRutRepository(db)
-        pago_filtro_rut_use_case = PagoFiltroRutUseCase(pago_filtro_rut_repository)
-        pago_filtro_rut_controller = PagoFiltroRutController(pago_filtro_rut_use_case)
+async def pago_filtro_rut(
+    request: PagoFiltroRutRequest, 
+    db: Session = Depends(get_db)
+):
+    # Create new PagoFiltroRut instance
+    pago_filtro_rut = PagoFiltroRut(
+        rut_cliente=request.rut_cliente,
+        fecha_inicio=request.fecha_inicio,
+        nombre_cliente=request.nombre_cliente,
+        motivo=request.motivo,
+        fecha_fin=request.fecha_fin
+    )
 
-        response = pago_filtro_rut_controller.procesar_pago_filtro_rut(
-            rut_cliente=pago_filtro_rut.rut_cliente, 
-            nombre_cliente=pago_filtro_rut.nombre_cliente, 
-            motivo=pago_filtro_rut.motivo
-        )
+    # Insert the data into the database
+    db.add(pago_filtro_rut)
+    db.commit()
 
-        return JSONResponse(content=response, status_code=200)
-
-    except HTTPException as e:
-        return JSONResponse(content={"error": e.detail}, status_code=e.status_code)
+    return {"message": "Operation successful"}
     
 
 @app.get("/pagoFiltroRut")
@@ -304,7 +311,6 @@ async def agregar_configuracion_pago_online(configuracion_pago_online_to: Config
         # Handle error
         return JSONResponse(content={"error": str(e)}, status_code=500)
     
-
 @app.get("/portal/configuracion/{id}")
 async def obtener_configuracion_pago_online(id: int, db: Session = Depends(get_db)):
     try:
