@@ -27,7 +27,7 @@ def get_db():
 
     connection_string = f'mssql+pyodbc://{username}:{password}@{host}:{port}/{database}?driver={driver}'
     
-    engine = create_engine(connection_string)
+    engine = create_engine(connection_string, echo=True)
     Session = sessionmaker(bind=engine)
 
     # Use the context manager to manage the database session

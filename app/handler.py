@@ -18,6 +18,8 @@ from app.repository.canales_repository import CanalesRepository
 from app.use_case.canales.busqueda_canal_use_case import BusquedaCanalUseCase
 from app.controllers.channels.listar_canales_controller import ListarCanalesController
 
+from app.models.listar_canales_by_id_trx_nro_orden import ListarCanalesByIdTrxNroOrdenTO
+
 from app.use_case.canales.listar_canales_use_case import ListarCanalesUseCase
 from app.controllers.channels.listar_canales_by_id_trx_controller import ListarCanalesByIdTrxController
 
@@ -119,11 +121,11 @@ async def listar_canales(db: Session = Depends(get_db)):
 
 
 @app.post("/listarCanalesByIdTrx")
-async def listar_canales_by_id_trx(listar_canales_by_id_trx: dict):
+async def listar_canales_by_id_trx(listar_canales_by_id_trx: ListarCanalesByIdTrxNroOrdenTO, db: Session = Depends(get_db)):
     """ Listar canales por ID de transacción """
     try:
         # Crear repositorio de canales
-        canales_repository = CanalesRepository()
+        canales_repository = CanalesRepository(db)
         
         # Crear caso de uso de listar canales por ID de transacción
         listar_canales_by_id_trx_use_case = ListarCanalesByIdTrxUseCase(canales_repository)

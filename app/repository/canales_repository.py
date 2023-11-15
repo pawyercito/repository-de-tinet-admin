@@ -10,15 +10,19 @@ from sqlalchemy import and_, or_, null
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-
+from sqlalchemy import text
+from sqlalchemy.engine import Result
+from sqlalchemy import create_engine, text, bindparam
 
 
 # Configura el sistema de registros
 logging.basicConfig(filename='app.log', level=logging.DEBUG)
 
+
+
 class CanalesRepository(BaseRepository):
-    def __init__(self, db):
-        super().__init__(db)
+    def __init__(self, session):
+        super().__init__(session)
     
     def buscar_canal(self, idCanal=None, producto=None, idConvenio=None, tipoOrigen=None, tipoSeguro=None, tipoProducto=None, idEmpresa=None, passwordCanal=None):
         # Start with a query for all rows
@@ -56,11 +60,18 @@ class CanalesRepository(BaseRepository):
         return [canal.__dict__ for canal in canales]
     
     def buscar_canales_por_id_trx_y_nro_orden(self, id_trx, nro_orden):
-        canales = self.session.query(Canales).filter_by(id_trx=id_trx).all()
-        if canales is None:
-            return None
-        return [canal.__dict__ for canal in canales]
-    
+        try:
+            # Start with a query for all rows
+            canales = self.session.execute(
+                text("EXEC sp_obtener_canales_cn_idtrx_nroorden(:id_trx, :nro_orden, :cursor_output); END;"),
+                {'id_trx': id_trx, 'nro_orden': nro_orden, 'cursor_output': bindparam('cursor_output', None, type_=object)}
+            )
+            # Obtener el resultado del cursor
+            cursor_result = canales.out_parameters['cursor_output']
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+
     def existe_canal(self, idCanal, descripcion, producto, idConvenio, tipoOrigen, tipoSeguro, tipoProducto, idEmpresa, passwordCanal):
         # Realiza una consulta para verificar si el canal ya existe en la base de datos
         existing_canal = self.session.query(Canales).filter_by(
